@@ -322,7 +322,7 @@ def check_instrument_errors(command, exit_on_error=True):
 # =========================================================
 # Main program:
 # =========================================================
-rm = pyvisa.ResourceManager("C:\\Windows\\System32\\visa64.dll")
+rm = pyvisa.ResourceManager()
 Infiniium = rm.open_resource("TCPIP0::169.254.205.81::hislip0::INSTR")
 Infiniium.timeout = 20000
 Infiniium.clear()
