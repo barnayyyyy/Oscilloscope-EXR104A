@@ -239,8 +239,8 @@ def analyze():
         time_val = x_origin + (i * x_increment)
         voltage = (values[i] * y_increment) + y_origin
         f.write("%E, %f\n" % (time_val, voltage))
-        f.close()
-        print("Waveform format BYTE data written to waveform_data.csv.")
+    f.close()
+    print("Waveform format BYTE data written to waveform_data.csv.")
 
 # =========================================================
 # Send a command and check for errors:
