@@ -1,0 +1,201 @@
+# by John Barney
+# For: plotting csv files (specifically from Cadence Virtuoso) to matplotlib png
+
+import matplotlib.pyplot as plt                                                                                             # importing plotting module
+import pandas as pd                                                                                                         # importing dataframe module
+import numpy as np                                                                                                          # importing array module
+
+savefile = "~/Downloads/"                                                                                                   # where to save file (downloads initialization)
+
+def Help():                                                                                                                 # defining help function
+    print("\n\n\
+    **********Examples**********\n\
+    import GraphCSV as G                                                                                                                                    # importing file\n\
+    G.savefile = 'C:/Users/johnb/Desktop/'                                                                                                                  # declaring save location\n\
+    G.Graph('C:/Users/johnb/waveform.csv','Time (s)', 'Volts (V)', title='Seperate Plots'   ,legendloc='upper right').Seperate()                            # seperate plots example\n\
+    G.Graph('C:/Users/johnb/waveform.csv','Time (s)', 'Volts (V)', title='Overlayed Plots'  ,linetype='--').Overlay(multi_x=False)                          # overlayed plots example\n\
+    G.Graph('C:/Users/johnb/waveform.csv','Time (s)', 'Volts (V)', title='Stacked Plots'    ,figsize=(10,10)).Stack(multi_x=True,sharex=True,sharey=False)  # stacked plots example\n\
+    \n\
+    **********Notes**********\n\
+    Use '/' or '\\\\' for '\\' in file paths\n\
+    (Due to '\\' being a special character to python)\n\n\
+    CSV column lengths must be in descending order\n\
+        ie: CSV column 0 must be <= column 1 <= column 2 ...\n\
+        (data will get cut off if not in this format)\n\
+    ")
+
+class Graph():                                                                                                              # initializing class for graphing
+    def __init__(self,file,xlabel='',ylabel='',title='',figsize=(8,5),legendloc='upper right',linetype='-',xscale='linear',yscale='linear'):    # initialization function
+        self.file = file                                                                                                    # input sheet to grap
+        self.df = pd.read_csv(self.file)                                                                                    # open csv as dataframe
+        self.columns = list(self.df)                                                                                        # get column names
+        non_nan_col = [col for col in self.df.columns if self.df.loc[:, col].notna().any()]                                 # finding all columns that are not only made of NaN values
+        for col in range(0,len(self.columns)):                                                                              # iterating through all df columns 
+            self.df[str(self.columns[col])] = pd.to_numeric(self.df[str(self.columns[col])],errors='coerce')                # changing all column data types to numeric (float)
+            if str(self.columns[col]) not in self.df[non_nan_col]:                                                          # evaluating selected column and non NaN column list
+                self.df = self.df.drop(str(self.columns[col]),axis=1)                                                       # removing all only NaN value columns 
+        self.columns = list(self.df)                                                                                        # get column names
+        self.xlabel = xlabel                                                                                                # initialize x axis label
+        self.ylabel = ylabel                                                                                                # initialize y axis label
+        self.title = title                                                                                                  # initialize title label
+        self.legendloc = legendloc                                                                                          # initialize location of legend
+        self.linetype = linetype                                                                                            # initialize type of line to plot
+        self.figsize = figsize                                                                                              # initialize figure size variable
+        self.xscale = xscale
+        self.yscale = yscale
+
+    def Seperate(self,multi_x=False):                                                                                       # function to graph csv columns independently
+        if (multi_x==False):                                                                                                # evaluating CSV reading method
+            if len(self.columns) >= 3:                                                                                      # evaluating how many columns are in dataframe
+                for delcol in range(2,len(self.columns),2):                                                                 # loop to remove every other column starting with 3
+                    self.df = self.df.drop(str(self.columns[delcol]), axis=1)                                               # dropping the columns
+            self.columns = list(self.df)                                                                                    # re declaring the columns of the new dataframe
+            for col in range(len(self.columns)-1):                                                                          # iterate through columns                 
+                plt.figure(figsize=self.figsize)                                                                            # initializing figure and its size
+                plt.xscale(self.xscale)                                                                                     # setting how x axis is scaled
+                plt.yscale(self.yscale)                                                                                     # setting how y axis is scaled
+                plt.plot(self.df.loc[:,self.columns[0]],self.df.loc[:,self.columns[col+1]],self.linetype,label=str(self.columns[col+1]))  # plot graphs with respect to first column
+                plt.legend(loc=self.legendloc)                                                                              # displaying legend on graph
+                plt.xlabel(self.xlabel)                                                                                     # labeling x axis
+                plt.ylabel(self.ylabel)                                                                                     # labeling y axis
+                plt.title(self.title+'_'+str(col+1))                                                                        # labeling title + number
+                plt.savefig(savefile+self.title+'_'+str(col+1)+'.png')                                                      # saving plot to save location as png
+        else:                                                                                                                   
+            self.columns = list(self.df)                                                                                    # re declaring the columns of the new dataframe
+            n=0                                                                                                             # initializing counter
+            for col in np.arange(0,len(self.columns),2):                                                                    # iterate through columns                 
+                plt.figure(figsize=self.figsize)                                                                            # setting figure size
+                plt.xscale(self.xscale)                                                                                     # setting how x axis is scaled
+                plt.yscale(self.yscale)                                                                                     # setting how y axis is scaled
+                plt.plot(self.df.loc[:,self.columns[col]],self.df.loc[:,self.columns[col+1]],self.linetype,label=str(self.columns[col+1]))  # plot graphs with respect to first column
+                plt.legend(loc=self.legendloc)                                                                              # displaying legend on graph
+                plt.xlabel(self.xlabel)                                                                                     # labeling x axis
+                plt.ylabel(self.ylabel)                                                                                     # labeling y axis
+                plt.title(self.title+'_'+str(n+1))                                                                          # labeling title + number
+                plt.savefig(savefile+self.title+'_'+str(n+1)+'.png')                                                        # saving plot to save location as 
+                n+=1                                                                                                        # increasing counter
+
+    def Overlay(self,multi_x=False):                                                                                        # function to overlay graphs by x axis
+        if (multi_x==False):
+            if len(self.columns) >= 3:                                                                                      # evaluating how many columns are in dataframe
+                for delcol in range(2,len(self.columns),2):                                                                 # loop to remove every other column starting with 3
+                    self.df = self.df.drop(str(self.columns[delcol]), axis=1)                                               # dropping the columns
+            self.columns = list(self.df)                                                                                    # re declaring the columns of the new dataframe
+            fig, ax = plt.subplots(figsize=self.figsize)                                                                    # setting up subplots for overlay graphing
+            plt.xscale(self.xscale)                                                                                         # setting how x axis is scaled
+            plt.yscale(self.yscale)                                                                                         # setting how y axis is scaled
+            for col in range(len(self.columns)-1):                                                                          # iterate through columns         
+                ax.plot(self.df.loc[:,self.columns[0]],self.df.loc[:,self.columns[col+1]],self.linetype,label=str(self.columns[col+1])) # plot columns in same graph
+                ax.legend(loc=self.legendloc)                                                                               # displaying legend on graph
+                ax.set_xlabel(self.xlabel)                                                                                  # labeling x axis
+                ax.set_ylabel(self.ylabel)                                                                                  # labeling y axis
+            fig.suptitle(self.title)                                                                                        # labeling title + number
+            return plt.savefig(savefile+self.title+'.png')                                                                  # saving plot to save location as png
+        else:
+            fig, ax = plt.subplots(figsize=self.figsize)                                                                    # setting up subplots for overlay graphing
+            plt.xscale(self.xscale)                                                                                         # setting how x axis is scaled
+            plt.yscale(self.yscale)                                                                                         # setting how y axis is scaled
+            for col in np.arange(0,len(self.columns),2):                                                                    # iterate through columns     
+                ax.plot(self.df.loc[:,self.columns[col]],self.df.loc[:,self.columns[col+1]],self.linetype,label=str(self.columns[col+1])) # plot columns in same graph
+                ax.legend(loc=self.legendloc)                                                                               # displaying legend on graph
+                ax.set_xlabel(self.xlabel)                                                                                  # labeling x axis
+                ax.set_ylabel(self.ylabel)                                                                                  # labeling y axis
+            fig.suptitle(self.title)                                                                                        # labeling title + number
+            return plt.savefig(savefile+self.title+'.png')                                                                  # saving plot to save location as png
+
+    def Stack(self, multi_x=False,sharex=False,sharey=False):                                                                                           # function to overlay graphs by x axis
+        if (multi_x==False):                                                                                                                            # evaluating CSV reading method
+            if len(self.columns) >= 3:                                                                                                                  # evaluating how many columns are in dataframe
+                for delcol in range(2,len(self.columns),2):                                                                                             # loop to remove every other column starting with 3
+                    self.df = self.df.drop(str(self.columns[delcol]), axis=1)                                                                           # dropping the columns
+            self.columns = list(self.df)                                                                                                                # re declaring the columns of the new dataframe
+            fig, ax = plt.subplots(len(self.columns)-1, sharex=sharex, sharey=sharey, figsize=self.figsize)                                             # setting up subplots for overlay graphing
+            for col in range(len(self.columns)-1):                                                                                                      # iterate through columns      
+                if (self.xscale == 'log' and self.yscale == 'log'):                                                                                     # checking if both x and y are log
+                    ax[col].loglog(self.df.loc[:,self.columns[0]],self.df.loc[:,self.columns[col+1]],self.linetype, label=str(self.columns[col+1]))     # plot columns in same graph
+                elif (self.xscale == 'log'):                                                                                                            # checking if just x is log
+                    ax[col].semilogx(self.df.loc[:,self.columns[0]],self.df.loc[:,self.columns[col+1]],self.linetype, label=str(self.columns[col+1]))   # plot columns in same graph
+                elif (self.yscale == 'log'):                                                                                                            # checking if just y is log
+                    ax[col].semilogy(self.df.loc[:,self.columns[0]],self.df.loc[:,self.columns[col+1]],self.linetype, label=str(self.columns[col+1]))   # plot columns in same graph
+                else:                                                                                                                                   # in all other cases
+                    ax[col].plot(self.df.loc[:,self.columns[0]],self.df.loc[:,self.columns[col+1]],self.linetype, label=str(self.columns[col+1]))       # plot columns in same graph   
+                ax[col].legend(bbox_to_anchor=(1.3,1))                                                                                                  # displaying legend on graph
+            fig.text(0.5, 0.04, self.xlabel, ha='center')                                                                                               # labeling x axis
+            fig.text(0.04, 0.5, self.ylabel, va='center', rotation='vertical')                                                                          # labeling y axis
+            fig.suptitle(self.title)                                                                                                                    # labeling title + number
+            fig.subplots_adjust(right=.75)                                                                                                              # adding padding to right side of image for labels
+            return plt.savefig(savefile+self.title+'.png')                                                                                              # saving plot to save location as png
+        else:
+            fig, ax = plt.subplots(len(np.arange(0,len(self.columns),2)), sharex=sharex, sharey=sharey, figsize=self.figsize)                           # setting up subplots for overlay graphing
+            n=0                                                                                                                                         # initializing counter
+            for col in np.arange(0,len(self.columns),2):                                                                                                # iterate through columns      
+                if (self.xscale == 'log' and self.yscale == 'log'):                                                                                     # checking if both x and y are log
+                    ax[n].loglog(self.df.loc[:,self.columns[col]],self.df.loc[:,self.columns[col+1]],self.linetype, label=str(self.columns[col+1]))     # plot columns in same graph
+                elif (self.xscale == 'log'):                                                                                                            # checking if just x is log
+                    ax[n].semilogx(self.df.loc[:,self.columns[col]],self.df.loc[:,self.columns[col+1]],self.linetype, label=str(self.columns[col+1]))   # plot columns in same graph
+                elif (self.yscale == 'log'):                                                                                                            # checking if just y is log
+                    ax[n].semilogy(self.df.loc[:,self.columns[col]],self.df.loc[:,self.columns[col+1]],self.linetype, label=str(self.columns[col+1]))   # plot columns in same graph
+                else:                                                                                                                                   # in all other cases
+                    ax[n].plot(self.df.loc[:,self.columns[col]],self.df.loc[:,self.columns[col+1]],self.linetype, label=str(self.columns[col+1]))       # plot columns in same graph
+                ax[n].legend(bbox_to_anchor=(1.3,1))                                                                                                    # displaying legend on graph
+                n+=1                                                                                                                                    # increasing counter
+            fig.text(0.5, 0.04, self.xlabel, ha='center')                                                                                               # labeling x axis
+            fig.text(0.04, 0.5, self.ylabel, va='center', rotation='vertical')                                                                          # labeling y axis
+            fig.suptitle(self.title)                                                                                                                    # labeling title + number
+            fig.subplots_adjust(right=.75)                                                                                                              # adding padding to right side of image for labels
+            return plt.savefig(savefile+self.title+'.png')                                                                                              # saving plot to save location as png
+
+    def Overlay_FitCurve(self,start='',end='',number_points=10,degree_fit=1,linetype='--',multi_x=False):                   # defining curve fitting function
+        print('Note: Not fully developed')                                                                              
+        import warnings                                                                                                     # for supressing warnings
+        if(self.xticks!=0):                                                                                                 # checking to see if x axis ticks marks have changed
+            plt.xticks(np.arange(min(self.df.loc[:,self.columns[0]]),max(self.df.loc[:,self.columns[0]]),self.xticks))      # setting x axis tick marks to new spacing
+        if (multi_x==False):                                                                                                # evaluating CSV reading method
+            if len(self.columns) >= 3:                                                                                      # evaluating how many columns are in dataframe
+                for delcol in range(2,len(self.columns),2):                                                                 # loop to remove every other column starting with 3
+                    self.df = self.df.drop(str(self.columns[delcol]), axis=1)                                               # dropping the columns
+            self.columns = list(self.df)                                                                                    # re declaring the columns of the new dataframe
+            fig, ax = plt.subplots(figsize=self.figsize)                                                                    # setting up subplots for overlay graphing
+            for col in range(len(self.columns)-1):                                                                          # iterate through columns        
+                x = np.array(self.df.loc[:,self.columns[0]])                                                                # declaring x axis points
+                y = np.array(self.df.loc[:,self.columns[col+1]])                                                            # declaring y axis points
+                with warnings.catch_warnings():                                                                             # opening supressing warning script
+                    warnings.simplefilter('ignore', np.RankWarning)                                                         # suppressing a warning
+                    p30 = np.poly1d(np.polyfit(x, y, degree_fit))                                                           # fitting curve to x and y points
+                if (start==''):                                                                                             # checking to see if default '' has changed
+                    start = min(np.array(self.df.loc[:,self.columns[0]]))                                                   # setting default start
+                if (end==''):                                                                                               # checking to see if default '' has changed
+                    end = max(np.array(self.df.loc[:,self.columns[0]]))                                                     # setting default end
+                xp = np.linspace(start,end,number_points)                                                                   # setting common x axis points
+                ax.plot(x,y,self.linetype,label=str(self.columns[col+1]))                                                   # plotting x and y points
+                ax.plot(xp, p30(xp),linetype,label=str(self.columns[col+1])+'_fit')                                         # plotting fitted curve
+                ax.legend(loc=self.legendloc)                                                                               # displaying legend on graph
+                ax.set_xlabel(self.xlabel)                                                                                  # labeling x axis
+                ax.set_ylabel(self.ylabel)                                                                                  # labeling y axis
+            fig.suptitle(self.title)                                                                                        # labeling title + number
+            return plt.savefig(savefile+self.title+'.png')                                                                  # saving plot to save location as png
+        else:
+            print("'multi_x==True' not yet set up")
+        #    self.columns = list(self.df)                                                                                   # re declaring the columns of the new dataframe
+        #    fig, ax = plt.subplots(figsize=self.figsize)                                                                   # setting up subplots for overlay graphing
+        #    def fixcol(                                                                                                    
+        #        df = se
+        #        return len(df.loc[:,self.columns[col]].drop
+        #    for col in np.arange(0,len(self.columns),2):                                                                   # iterate through columns  
+        #        x = np.array(self.df.loc[:9,self.columns[col]])                                                            ##ERRORS WITH :9
+        #        y = np.array(self.df.loc[:9,self.columns[col+1]]
+        #        with warnings.catch_warning
+        #            warnings.simplefilter('ignore', np.RankWarn
+        #            p30 = np.poly1d(np.polyfit(x, y, degree_fit)
+        #        if (start=
+        #            start = min(np.array(self.df.loc[:,self.columns[co
+        #        if (end=
+        #            end = max(np.array(self.df.loc[:,self.columns[co
+        #        xp = np.linspace(start,end,number_poi
+        #        ax.plot(x,y,self.linetype,label=str(self.columns[col+1]))                                                  # plot columns in same graph
+        #        ax.plot(xp, p30(xp),linetype,label=str(self.columns[col+1])+'_fit') 
+        #        ax.legend(loc=self.legendloc)                                                                              # displaying legend on graph
+        #        ax.set_xlabel(self.xlabel)                                                                                 # labeling x axis
+        #        ax.set_ylabel(self.ylabel)                                                                                 # labeling y axis
+        #    fig.suptitle(self.title)                                                                                       # labeling title + number
+        #    return plt.savefig(savefile+self.title+'.png')                                                                 # saving plot to save location as png
